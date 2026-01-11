@@ -1,0 +1,9 @@
+CREATE TABLE users (
+    user_id INTEGER PRIMARY KEY,
+    username TEXT
+);
+
+CREATE TABLE winners (
+    user_id INTEGER,
+    prize_id INTEGER
+);
