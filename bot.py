@@ -1,22 +1,24 @@
+import telebot
+import os
 import cv2
-import numpy as np
-from math import sqrt, ceil, floor
+from database import DatabaseManager
+from logic import create_collage
 
-def create_collage(image_paths):
-    images = []
-    for path in image_paths:
-        image = cv2.imread(path)
-        images.append(image)
+bot = telebot.TeleBot('ВАШ_ТОКЕН')
+db = DatabaseManager('database.db')
 
-    num_images = len(images)
-    num_cols = floor(sqrt(num_images))
-    num_rows = ceil(num_images / num_cols)
+@bot.message_handler(commands=['my_score'])
+def get_my_score(message):
+    user_id = message.from_user.id
+    prizes = db.get_winners_img(user_id)
 
-    collage = np.zeros((num_rows * images[0].shape[0], num_cols * images[0].shape[1], 3), dtype=np.uint8)
+    image_paths = os.listdir('img')
+    image_paths = [f'img/{x}' if x in prizes else f'hidden_img/{x}' for x in image_paths]
 
-    for i, image in enumerate(images):
-        row = i // num_cols
-        col = i % num_cols
-        collage[row*image.shape[0]:(row+1)*image.shape[0], col*image.shape[1]:(col+1)*image.shape[1], :] = image
+    collage = create_collage(image_paths)
+    cv2.imwrite(f'collage_{user_id}.png', collage)
 
-    return collage
+    with open(f'collage_{user_id}.png', 'rb') as photo:
+        bot.send_photo(user_id, photo, caption="Твой коллаж с призами!")
+    
+    os.remove(f'collage_{user_id}.png')
